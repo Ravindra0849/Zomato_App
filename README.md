@@ -1,71 +1,276 @@
-# Getting Started with Create React App
+# Zomato Clone: Secure Deployment with DevSecOps CI/CD
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Hey there! Get ready for an exciting journey as we embark on deploying a React JS Zomato clone.
 
-## Available Scripts
+🚀 Explore the GitHub Repository https://github.com/Ravindra0849/Zomato_App.git for all the code and resources. Happy coding, friends!
 
-In the project directory, you can run:
+Steps:-
 
-### `npm start`
+Step 1 — Launch an Ubuntu(22.04) T2 Large Instance
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Step 2 — Install Jenkins, Docker and Trivy. Create a SonarQube Container using Docker.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Step 3 — Install Plugins like JDK, SonarQube Scanner, Nodejs, and OWASP Dependency Check.
 
-### `npm test`
+Step 4 — Create a Pipeline Project in Jenkins using a Declarative Pipeline
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Step 5 — Docker Image Build and Push
 
-### `npm run build`
+Step 6 — Deploy the image using Docker
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Step 7 — Terminate the AWS EC2 Instances.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Now, let’s get started and dig deeper into each of these steps:-
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+STEP1:Launch an Ubuntu(22.04) T2 Large Instance
 
-### `npm run eject`
+Launch an AWS T2 Large Instance. Use the image as Ubuntu. You can create a new key pair or use an existing one. Enable HTTP and HTTPS settings in the Security Group and open all ports (not best case to open all ports but just for learning purposes it’s okay).
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Step 2 — Install Jenkins, Docker and Trivy
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    sudo apt update -y
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+    #sudo apt upgrade -y
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+    sudo apt-get install openjdk-11-jdk -y
 
-## Learn More
+    java --version
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+    curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-### Code Splitting
+    sudo apt-get update -y
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+    sudo apt-get install jenkins -y
 
-### Analyzing the Bundle Size
+    sudo systemctl enable jenkins
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+    sudo systemctl start jenkins
 
-### Making a Progressive Web App
+    sudo systemctl status jenkins
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Once Jenkins is installed, you will need to go to your AWS EC2 Security Group and open Inbound Port 8080, since Jenkins works on Port 8080.
 
-### Advanced Configuration
+Now, grab your Public IP Address
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+    <EC2 Public IP Address:8080>
 
-### Deployment
+    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Create a user click on save and continue.
 
-### `npm run build` fails to minify
+Jenkins Getting Started Screen.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# Zomato-Clone
+# Install Docker
+
+    sudo apt-get update
+    sudo apt-get install docker.io -y
+    sudo usermod -aG docker $USER   #my case is ubuntu
+    newgrp docker
+    sudo chmod 777 /var/run/docker.sock
+
+After the docker installation, we create a sonarqube container (Remember to add 9000 ports in the security group).
+
+    docker run --name sonar -d -p 9000:9000 sonarqube:lts-community
+
+Now our sonarQube is up and running
+
+    Username: admin
+    password: admin
+
+Update New password, This is Sonar Dashboard.
+
+# Install Trivy
+
+    sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+    sudo apt-get update
+    sudo apt-get install trivy -y
+
+# Install Plugins like JDK, Sonarqube Scanner, NodeJs, OWASP Dependency Check
+
+Install Plugin
+
+Go to Manage Jenkins →Plugins → Available Plugins →
+
+Install below plugins
+
+    1 → Eclipse Temurin Installer (Install without restart)
+
+    2 → SonarQube Scanner (Install without restart)
+
+    3 → Sonar Quality Gates Plugin (Install Without restart)
+
+    4 → NodeJs Plugin (Install Without restart)
+
+    5 → Docker Plugins (Install Without restart)
+
+Configure Java and Nodejs in Global Tool Configuration
+
+Create a Job
+
+Configure Sonar Server in Manage Jenkins
+
+Grab the Public IP Address of your EC2 Instance, Sonarqube works on Port 9000, so <Public IP>:9000. Goto your Sonarqube Server. Click on Administration → Security → Users → Click on Tokens and Update Token → Give it a name → and click on Generate Token
+
+click on create Token
+
+Create a token with a name and generate
+
+copy Token
+
+Goto Jenkins Dashboard → Manage Jenkins → Credentials → Add Secret Text. It should look like this
+
+You will this page once you click on create
+
+Now, go to Dashboard → Manage Jenkins → System and Add like the below image
+
+Click on Apply and Save
+
+The Configure System option is used in Jenkins to configure different server
+
+Global Tool Configuration is used to configure different tools that we install using Plugins
+
+We will install a sonar scanner in the tools.
+
+In the Sonarqube Dashboard add a quality gate also
+
+Administration → Configuration →Webhooks
+
+Click on Create
+
+Add details
+
+<http://jenkins-public-ip:8080>/sonarqube-webhook/>
+
+Create a pipeline
+
+    pipeline {
+        agent any
+    
+        tools {
+            jdk "jdk17"
+            nodejs "node16"
+        }
+    
+        environment {
+            SCANNER_HOME=tool 'sonar-scanner'
+        }
+    
+        stages {
+            stage ("Clean Workspace") {
+                steps {
+                    cleanWs()
+                }
+            }
+        
+            stage ("Git Checkout Code") {
+                steps {
+                    git branch: 'master', url: 'https://github.com/Ravindra0849/Zomato_App.git'
+                }
+            }
+        
+            stage ("Sonar Scan") {
+                steps {
+                    withSonarQubeEnv('sonar') {
+                        sh " $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=zomato -Dsonar.projectKey=zomato "
+                    }
+                }
+            }
+        
+            stage('Quality Gates Checking') {
+                steps {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar'
+                }
+            }
+        }
+    }
+
+Go to SonarQube Dashboard, we can check the Bugs, Code Smells and Some other
+
+Check the Npm Dependency
+
+    stage('Npm Dependency') {
+                steps {
+                    sh "npm install"
+                }
+            }
+
+To scan the all the files using Trivy and take the output logs into .txt file
+
+    stage('Trivy Scan') {
+            steps {
+                sh "trivy fs . > trivyfs.txt "
+            }
+        }
+
+Docker Image Build and Push
+
+We need to install the Docker tool in our system, Goto Dashboard → Manage Plugins → Available plugins → Search for Docker and install these plugins
+
+Docker
+
+Docker Commons
+
+Docker Pipeline
+
+Docker API
+
+docker-build-step
+
+and click on install without restart
+
+Now, go to Dashboard → Manage Jenkins → Tools →
+
+Add Docker Hub Username and Password under Global Credentials
+
+To build the docker image and tag the image with the build numbers
+
+    stage('Build Docker Image') {
+            steps {
+                script{
+                    withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker'){   
+                        sh "docker build -t zomato ."
+                        sh "docker tag zomato ravisree900/zomato:'${env.BUILD_NUMBER}'"
+                    }
+                }
+            }
+        }
+
+Scan the docker image using trivy and collect the output in the .txt file
+
+    stage('Scan Docker Image') {
+            steps {
+                sh "trivy image ravisree900/zomato:'${env.BUILD_NUMBER}' > trivyimage.txt "
+            }
+        }
+
+Push the docker image into Docker Registry
+
+    stage('Push Docker Image into Docker Registry') {
+            steps {
+                script{
+                    withDockerRegistry(credentialsId: 'dockerhub', toolName: 'docker'){   
+                        sh " docker push ravisree900/zomato:'${env.BUILD_NUMBER}' "
+                    }
+                }
+            }
+        }
+
+Create the docker container with the port number 3000
+
+    stage('Deploy to Docker Container') {
+            steps {
+                sh " docker run --name zomato -d -p 3300:3000 ravisree900/zomato:'${env.BUILD_NUMBER}' "
+            }
+        }
+
+Access it form the external browser with <public Ip:3300>
+
+Terminate instances.
+
+Efficiently manage resources by terminating the AWS EC2 Instances to ensure cost-effectiveness and environmental responsibility, completing the deployment lifecycle. Utilize AWS management tools or commands to gracefully shut down and terminate the Ubuntu(22.04) T2 Large Instance, concluding the deployment process while maintaining operational efficiency.
+
+Thanks for Watching this content and Follow my page for more contents.
