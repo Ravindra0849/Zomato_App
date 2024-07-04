@@ -1,4 +1,4 @@
-# Zomato Clone: Secure Deployment with DevSecOps CI/CD
+# Zomato Clone: Secure Deployment with DevSecOps CI/CD Pipeline 
 
 Hey there! Get ready for an exciting journey as we embark on deploying a React JS Zomato clone.
 
